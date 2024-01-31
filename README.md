@@ -2,7 +2,7 @@
 
 本文档基于OpenAI官网介绍，主要用于个人理解与API调用测试。<br>
 
-文件介绍:<br>
+**文件介绍:**<br>
 
 - `fastapi_sse_example` : 异步方式实现fastapi调用OpenAI服务，结果以sse方式传输。
 
@@ -10,7 +10,7 @@
 
 - `gradio_stream_openai.py` : 异步方式接收FastAPI或Sanic以sse方式传输的数据，然后以界面方式呈现。
 
-OpenAI官网内容介绍:<br>
+**OpenAI官网内容介绍:**<br>
 
 - [openAI API use:](#openai-api-use)
   - [Key concepts(关键概念):](#key-concepts关键概念)
