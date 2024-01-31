@@ -10,6 +10,8 @@
 
 - `gradio_stream_openai.py` : 异步方式接收FastAPI或Sanic以sse方式传输的数据，然后以界面方式呈现。
 
+- `openai_test.py`: 同步写法，支持终端直接测试openai效果。(前提:终端需能连接openai服务)
+
 **OpenAI官网内容介绍:**<br>
 
 - [openai\_parse:](#openai_parse)
