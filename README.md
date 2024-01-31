@@ -4,7 +4,7 @@
 
 **文件介绍:**<br>
 
-- `fastapi_sse_example` : 异步方式实现fastapi调用OpenAI服务，结果以sse方式传输。
+- `fastapi_sse_example.py` : 异步方式实现fastapi调用OpenAI服务，结果以sse方式传输。
 
 - `sanic_sse_example.py` : 异步方式实现Sanic调用OpenAI服务，结果以sse方式传输。
 
