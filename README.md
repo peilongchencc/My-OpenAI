@@ -10,6 +10,7 @@
 
 - `gradio_stream_openai.py` : 异步方式接收FastAPI或Sanic以sse方式传输的数据，然后以界面方式呈现。
 
+OpenAI官网内容介绍:<br>
 
 - [openAI API use:](#openai-api-use)
   - [Key concepts(关键概念):](#key-concepts关键概念)
