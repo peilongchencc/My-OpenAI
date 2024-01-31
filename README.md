@@ -1,4 +1,4 @@
-# openAI API use:
+# openai_parse:
 
 本文档基于OpenAI官网介绍，主要用于个人理解与API调用测试。<br>
 
@@ -12,7 +12,7 @@
 
 **OpenAI官网内容介绍:**<br>
 
-- [openAI API use:](#openai-api-use)
+- [openai\_parse:](#openai_parse)
   - [Key concepts(关键概念):](#key-concepts关键概念)
     - [Text generation models(文本生成模型):](#text-generation-models文本生成模型)
     - [Assistant:](#assistant)
