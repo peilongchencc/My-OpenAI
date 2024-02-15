@@ -24,7 +24,8 @@ logger.add("openai_stream.log", rotation="1 GB", backtrace=True, diagnose=True, 
 async def get_openai_response(chat_history):
     async with AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY")) as client:
         completion = await client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            # model="gpt-3.5-turbo",
+            model="gpt-4-0125-preview",
             messages=chat_history,
             stream=True
         )

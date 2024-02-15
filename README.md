@@ -42,6 +42,7 @@
     - [Next steps(接下来的步骤):](#next-steps接下来的步骤)
   - [settings:](#settings)
     - [Billing settings(账单设置):](#billing-settings账单设置)
+  - [Embeddings](#embeddings)
 
 "Head to chat.openai.com."：这部分是一个建议或指令，意思是“前往 chat.openai.com。”。“Head to”是一个常用的英语短语，用来建议某人去某个地方。在这里，它意味着如果你想使用或了解更多关于ChatGPT的信息，应该访问网址“chat.openai.com”，这是一个特定的网站链接。<br>
 
@@ -578,3 +579,40 @@ Now that you have made you first OpenAI API request, it is time to explore what 
 Note: This does not reflect the status of your ChatGPT account.<br>
 
 备注：这并不反映你的ChatGPT账户的状态。<br>
+
+
+## Embeddings
+
+Learn how to turn text into numbers, unlocking use cases like search.<br>
+
+学习如何将文本转换为数字，解锁搜索等用例。<br>
+
+```txt
+New embedding models
+
+text-embedding-3-small and text-embedding-3-large, our newest and most performant(性能最优) embedding models are now available, with lower costs(成本), higher multilingual performance(更高的多语言性能), and new parameters to control the overall(总体的) size.(推测指的是控制模型的整体大小)
+```
+
+What are embeddings?<br>
+
+OpenAI’s text embeddings measure(测量；评估；衡量) the relatedness(相关性) of text strings. Embeddings are commonly used for(OpenAI 的文本词向量用于衡量文本字符串的相关性。嵌入向量常用于：):<br>
+
+- **Search** (where results are ranked by relevance to a query string)搜索（其中结果按与查询字符串的相关性排序）
+
+- **Clustering** (where text strings are grouped by similarity)聚类（其中文本字符串按相似性分组）
+
+- **Recommendations** (where items with related text strings are recommended)推荐（具有相关文本字符串的项目会被推荐）
+
+- **Anomaly(异常或偏离常规的事物) detection** (where outliers(异常值) with little relatedness are identified)异常检测（其中识别出与众不同的异常值）
+
+- **Diversity measurement** (where similarity distributions are analyzed)多样性测量（相似性分布会被分析）
+
+- **Classification** (where text strings are classified by their most similar label)分类（文本字符串按其最相似的标签分类）
+
+An embedding is a vector (list) of floating point numbers. The distance between two vectors measures their relatedness. Small distances suggest high relatedness and large distances suggest low relatedness.<br>
+
+一个嵌入向量是一个浮点数列表（向量）。两个向量之间的距离衡量了它们的相关性。小距离表明高度相关，大距离表明低度相关。<br>
+
+Visit our [pricing page](https://openai.com/pricing) to learn about Embeddings pricing. Requests are billed based on the number of [tokens](https://platform.openai.com/tokenizer) in the [input](https://platform.openai.com/docs/api-reference/embeddings/create).<br>
+
+访问我们的定价页面了解有关嵌入向量定价的更多信息。Requests(请求)根据输入中的tokens数量进行计费。<br>
