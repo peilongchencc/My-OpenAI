@@ -43,6 +43,10 @@
   - [settings:](#settings)
     - [Billing settings(账单设置):](#billing-settings账单设置)
   - [Embeddings](#embeddings)
+    - [What are embeddings?](#what-are-embeddings)
+    - [How to get embeddings(如何获得词向量)](#how-to-get-embeddings如何获得词向量)
+    - [Embedding models(词向量模型):](#embedding-models词向量模型)
+    - [Use cases(应用案例):](#use-cases应用案例)
 
 "Head to chat.openai.com."：这部分是一个建议或指令，意思是“前往 chat.openai.com。”。“Head to”是一个常用的英语短语，用来建议某人去某个地方。在这里，它意味着如果你想使用或了解更多关于ChatGPT的信息，应该访问网址“chat.openai.com”，这是一个特定的网站链接。<br>
 
@@ -593,7 +597,7 @@ New embedding models
 text-embedding-3-small and text-embedding-3-large, our newest and most performant(性能最优) embedding models are now available, with lower costs(成本), higher multilingual performance(更高的多语言性能), and new parameters to control the overall(总体的) size.(推测指的是控制模型的整体大小)
 ```
 
-What are embeddings?<br>
+### What are embeddings?
 
 OpenAI’s text embeddings measure(测量；评估；衡量) the relatedness(相关性) of text strings. Embeddings are commonly used for(OpenAI 的文本词向量用于衡量文本字符串的相关性。嵌入向量常用于：):<br>
 
@@ -616,3 +620,125 @@ An embedding is a vector (list) of floating point numbers. The distance between 
 Visit our [pricing page](https://openai.com/pricing) to learn about Embeddings pricing. Requests are billed based on the number of [tokens](https://platform.openai.com/tokenizer) in the [input](https://platform.openai.com/docs/api-reference/embeddings/create).<br>
 
 访问我们的定价页面了解有关嵌入向量定价的更多信息。Requests(请求)根据输入中的tokens数量进行计费。<br>
+
+### How to get embeddings(如何获得词向量)
+
+To get an embedding, send your text string to [the embeddings API endpoint](https://platform.openai.com/docs/api-reference/embeddings) along with the embedding model name (e.g. `text-embedding-3-small`). The response will contain an embedding (list of floating point numbers), which you can extract, save in a vector database, and use for many different use cases:<br>
+
+要获得词向量，将你的文本字符串连同嵌入模型名称（例如，text-embedding-3-small）一起发送到词向量API端点。响应将包含一个嵌入（浮点数列表），你可以提取该词向量，保存在向量数据库中，并用于许多不同的用例：<br>
+
+```python
+from openai import OpenAI
+client = OpenAI()
+
+response = client.embeddings.create(
+    input="Your text string goes here",
+    model="text-embedding-3-small"
+)
+
+print(response.data[0].embedding)
+```
+
+The response will contain the embedding vector along with some additional metadata.<br>
+
+响应将包含词向量以及一些额外的元数据。<br>
+
+Embeddings 返回的示例如下:<br>
+
+> "**omitted**"的意思是“省略的”，“遗漏的”，或“删去的”。"**omitted for spacing**"的意思是因为空间限制而省略了一部分内容。
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "object": "embedding",
+      "index": 0,
+      "embedding": [
+        -0.006929283495992422,
+        -0.005336422007530928,
+        ... (omitted for spacing)
+        -4.547132266452536e-05,
+        -0.024047505110502243
+      ],
+    }
+  ],
+  "model": "text-embedding-3-small",
+  "usage": {
+    "prompt_tokens": 5,
+    "total_tokens": 5
+  }
+}
+```
+
+By default, the length of the embedding vector will be 1536 for `text-embedding-3-small` or 3072 for `text-embedding-3-large`. You can reduce(减少) the dimensions(维度数) of the embedding by passing in the dimensions parameter without the embedding losing its concept-representing properties. We go into more detail on embedding dimensions in the embedding use case section.
+
+默认情况下，`text-embedding-3-small` 的词向量长度将为1536，而 `text-embedding-3-large` 的词向量长度将为3072。你可以通过传入维度参数来减少词向量的维度数，而不会丢失词向量表示概念的属性。我们在嵌入使用案例部分对嵌入维度进行了更详细的讨论。
+
+
+```txt
+dimensions integer(整数) Optional(可选的)
+
+The number of dimensions the resulting output embeddings should have. Only supported in text-embedding-3 and later models.
+
+结果输出词向量应具有的维度数。仅在 `text-embedding-3` 及后续模型中支持。🚨🚨🚨
+```
+
+示例代码如下:<br>
+
+```python
+import os
+from loguru import logger
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# 加载环境变量
+dotenv_path = '.env.local'
+load_dotenv(dotenv_path=dotenv_path)
+
+# 设置日志
+logger.remove()
+logger.add("openai_stream.log", rotation="1 GB", backtrace=True, diagnose=True, format="{time} {level} {message}")
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+response = client.embeddings.create(
+    input="《老人与海》这篇文章被选入了小学语文课本。",
+    model="text-embedding-3-small",
+    dimensions=768
+)
+
+print(response.data[0].embedding)
+print(len(response.data[0].embedding))
+```
+
+终端输出:<br>
+
+```txt
+[0.06348717212677002, -0.01719544641673565, -0.006907057948410511, 0.008044195361435413, 0.05607472360134125, -0.025943584740161896, -0.08866063505411148, 0.004545541945844889, -0.05698924511671066, -0.011876770295202732, -0.012255816720426083, -0.08413615077733994, -0.0390116423368454, 0.05424567684531212, ...]
+768
+```
+
+### Embedding models(词向量模型):
+
+OpenAI offers two powerful third-generation embedding model (denoted(“表示”、“指代”或“标记”) by `-3` in the model ID). You can read the embedding v3 [announcement blog post](https://openai.com/blog/new-embedding-models-and-api-updates) for more details.<br>
+
+OpenAI提供了两款强大的第三代词向量模型（在模型ID中以-3表示）。您可以阅读词向量v3公告博客文章了解更多详情。<br>
+
+Usage is priced per input token, below is an example of pricing pages of text per US dollar (assuming ~800 tokens per page):<br>
+
+使用费用按输入token计算，以下是按美元计价的文本页面示例（假设每页约800个token）：<br>
+
+| MODEL                 | ~ PAGES PER DOLLAR | PERFORMANCE ON MTEB EVAL | MAX INPUT |
+|-----------------------|--------------------|--------------------------|-----------|
+| text-embedding-3-small | 62,500            | 62.3%                    | 8191      |
+| text-embedding-3-large | 9,615             | 64.6%                    | 8191      |
+| text-embedding-ada-002 | 12,500            | 61.0%                    | 8191      |
+
+> "MTEB EVAL"指的是一个评估模型性能的标准或测试集合。MTEB 通常代表 "Multitask Text Embedding Benchmark"，它是一系列不同的任务和数据集，用于评估文本嵌入模型的性能。这些任务可能包括语义相似性、文本分类、信息检索等多种自然语言处理任务。"PERFORMANCE ON MTEB EVAL" 即表示模型在这个多任务文本嵌入基准测试上的表现或准确率的百分比。
+
+### Use cases(应用案例):
+
+Here we show some representative(代表性的) use cases. We will use the **[Amazon fine-food reviews dataset](https://www.kaggle.com/datasets/snap/amazon-fine-food-reviews)** for the following examples.<br>
+
+在这里，我们展示一些具有代表性的应用案例。我们将使用 **亚马逊精选食品评论数据集** 作为以下示例的基础。<br>
