@@ -49,6 +49,7 @@
     - [Use cases(应用案例):](#use-cases应用案例)
       - [Obtaining the embeddings(获取词向量):](#obtaining-the-embeddings获取词向量)
       - [Reducing embedding dimensions(降低词向量维度):](#reducing-embedding-dimensions降低词向量维度)
+      - [验证 "手动降低维度" 和 "通过传参降低维度" 的区别:](#验证-手动降低维度-和-通过传参降低维度-的区别)
 
 "Head to chat.openai.com."：这部分是一个建议或指令，意思是“前往 chat.openai.com。”。“Head to”是一个常用的英语短语，用来建议某人去某个地方。在这里，它意味着如果你想使用或了解更多关于ChatGPT的信息，应该访问网址“chat.openai.com”，这是一个特定的网站链接。<br>
 
@@ -870,4 +871,119 @@ norm_dim = normalize_l2(cut_dim)
 print(norm_dim)
 ```
 
-请将下列内容翻译为地道的中文:
+Dynamically(动态的) changing the dimensions enables very flexible usage. For example, when using a vector data store that only supports embeddings up to 1024 dimensions long, developers can now still use our best embedding model `text-embedding-3-large` and specify a value of 1024 for the dimensions API parameter, which will shorten the embedding down from 3072 dimensions, trading off some accuracy in exchange for the smaller vector size.<br>
+
+动态改变维度可以实现非常灵活的使用。例如，当使用一个仅支持最长1024维的向量数据存储时，开发者现在仍然可以使用我们最好的词向量模型 `text-embedding-3-large` ，并为维度API参数指定一个1024的值，这将会将词向量从3072维缩短，以较小的向量大小为代价交换一些准确性。<br>
+
+#### 验证 "手动降低维度" 和 "通过传参降低维度" 的区别:
+
+运行以下代码，我们来验证一下，"手动降低维度" 和 "通过传参降低维度" 的结果是否相同:<br>
+
+```python
+import os
+import numpy as np
+from loguru import logger
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# 加载环境变量
+dotenv_path = '.env.local'
+load_dotenv(dotenv_path=dotenv_path)
+
+# 设置日志
+logger.remove()
+logger.add("openai_stream.log", rotation="1 GB", backtrace=True, diagnose=True, format="{time} {level} {message}")
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+user_input = "《老人与海》这篇文章被选入了小学语文课本。"   # 用户输入会被转化为 [1 x dimension_n] 的列表
+
+response = client.embeddings.create(
+    input=user_input,
+    model="text-embedding-3-small",
+)
+
+print("标准embedding调用:\n")
+print(response.data[0].embedding)
+print(type(response.data[0].embedding))
+print(len(response.data[0].embedding))
+# type(response.data[0].embedding)
+# <class 'list'>
+# len(response.data[0].embedding)
+# 1536
+print("\n标准embedding调用后，手动降低维度，并执行标准化操作:\n")
+def normalize_l2(x):
+    x = np.array(x)
+    if x.ndim == 1:
+        norm = np.linalg.norm(x)
+        if norm == 0:
+            return x
+        return x / norm
+    else:
+        norm = np.linalg.norm(x, 2, axis=1, keepdims=True)
+        return np.where(norm == 0, x, x / norm)
+
+cut_dim = response.data[0].embedding[:256]
+norm_dim = normalize_l2(cut_dim)    # norm_dim的数据类型为<class 'numpy.ndarray'>，可通过 `norm_dim.tolist()` 转为list形式。
+print(norm_dim)
+print(type(norm_dim))
+print(len(norm_dim))
+
+print("\n标准embedding调用，采用传参形式降低维度:\n")
+para_response = client.embeddings.create(
+    input=user_input,
+    model="text-embedding-3-small",
+    dimensions=256
+)
+
+para_dim = para_response.data[0].embedding  # list类型，长度256，数据为 [0.09904252737760544, -0.02682558260858059, -0.01077528577297926, 0.012549266219139099,...]
+# 由于array类型的数据格式为 `[ 9.90425200e-02 -2.68255801e-02 -1.07752855e-02  1.25492662e-02 ...]`，数据含科学计数法(`e`)
+# 所以想比较2个变量是否相同最好的方式不是将 array 转为 list，而是将 list 转为 array 。因为将 array 转为 list 会因为 `e` 的原因造成小数点后8位之后的数字精度缺失(9.90425200e-02 对应小数点后8位)。
+para_dim_array = np.array(para_dim)
+print(para_dim_array)
+print(type(para_dim_array))
+print(len(para_dim_array))
+
+# 使用np.allclose进行比较，可以指定一个容忍度(9.90425200e-02 对应小数点后8位)
+# - atol代表绝对容忍度，是一个非负的浮点数。
+# - 1e-8是科学计数法表示的0.00000001，即1后面跟着8个零。
+are_close = np.allclose(norm_dim, para_dim_array, atol=1e-8)
+
+print(f"\nnorm_dim和para_dim是否几乎相等: {are_close}")
+```
+
+终端结果为:<br>
+
+```txt
+标准embedding调用:
+
+[0.04963647946715355, -0.013443997129797935, -0.005400178022682667, ... ... , 0.0041159894317388535, 0.017432980239391327, 0.016351062804460526, 0.04470670223236084, -0.021807687357068062]
+<class 'list'>
+1536
+
+标准embedding调用后，手动降低维度，并执行标准化操作:
+
+[ 9.90425200e-02 -2.68255801e-02 -1.07752855e-02  1.25492662e-02
+  8.74788025e-02 -4.04730259e-02 -1.38314123e-01  7.09122691e-03
+ -8.89054954e-02 -1.85282361e-02 -1.91195614e-02 -1.31255742e-01
+  ... ...
+  3.07302145e-02 -4.34988801e-04  4.52036396e-02  1.47099553e-01
+  8.31236329e-02 -2.74262936e-02 -5.57536576e-02 -3.96094993e-03]
+<class 'numpy.ndarray'>
+256
+
+标准embedding调用，采用传参形式降低维度:
+
+[ 9.90425274e-02 -2.68255826e-02 -1.07752858e-02  1.25492662e-02
+  8.74788016e-02 -4.04730253e-02 -1.38314128e-01  7.09122699e-03
+ -8.89054984e-02 -1.85282361e-02 -1.91195626e-02 -1.31255746e-01
+  ... ...
+  3.07302158e-02 -4.34988819e-04  4.52036411e-02  1.47099555e-01
+  8.31236392e-02 -2.74262950e-02 -5.57536595e-02 -3.96095030e-03]
+<class 'numpy.ndarray'>
+256
+
+norm_dim和para_dim是否几乎相等: True
+```
+
+🚀🚀🚀由此可以确定，官方给出的 "手动降低维度" 代码即 "传参降低维度" 代码，2者效果相同。<br>
