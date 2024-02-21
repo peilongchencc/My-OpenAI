@@ -47,6 +47,8 @@
     - [How to get embeddings(如何获得词向量)](#how-to-get-embeddings如何获得词向量)
     - [Embedding models(词向量模型):](#embedding-models词向量模型)
     - [Use cases(应用案例):](#use-cases应用案例)
+      - [Obtaining the embeddings(获取词向量):](#obtaining-the-embeddings获取词向量)
+      - [Reducing embedding dimensions(降低词向量维度):](#reducing-embedding-dimensions降低词向量维度)
 
 "Head to chat.openai.com."：这部分是一个建议或指令，意思是“前往 chat.openai.com。”。“Head to”是一个常用的英语短语，用来建议某人去某个地方。在这里，它意味着如果你想使用或了解更多关于ChatGPT的信息，应该访问网址“chat.openai.com”，这是一个特定的网站链接。<br>
 
@@ -742,3 +744,130 @@ Usage is priced per input token, below is an example of pricing pages of text pe
 Here we show some representative(代表性的) use cases. We will use the **[Amazon fine-food reviews dataset](https://www.kaggle.com/datasets/snap/amazon-fine-food-reviews)** for the following examples.<br>
 
 在这里，我们展示一些具有代表性的应用案例。我们将使用 **亚马逊精选食品评论数据集** 作为以下示例的基础。<br>
+
+#### Obtaining the embeddings(获取词向量):
+
+The dataset contains a total of 568,454 food reviews Amazon users left up to October 2012. <br>
+
+> "left up to" 表示 "直到...为止"。
+
+该数据集包含了截至2012年10月，亚马逊用户留下的共568,454条食品评论。<br>
+
+We will use a subset of 1,000 most recent reviews for illustration(展示) purposes. The reviews are in English and tend to be positive or negative. Each review has a ProductId, UserId, Score, review title (Summary) and review body (Text). For example:<br>
+
+> "subset"这个词指的是从一个较大集合中选出的一部分元素组成的较小集合
+
+我们将使用最新的1,000条评论作为示例。这些评论都是用英文写成的，倾向于表达积极或消极的观点。每条评论都有一个产品ID（ProductId）、用户ID（UserId）、评分（Score）、评论标题（摘要Summary）和评论正文（文本Text）。例如：<br>
+
+| PRODUCT ID | USER ID       | SCORE | SUMMARY               | TEXT                                              |
+|------------|---------------|-------|-----------------------|---------------------------------------------------|
+| B001E4KFG0 | A3SGXH7AUH8GW | 5     | Good Quality Dog Food | I have bought several of the Vitality canned...   |
+| B00813GRG4 | A1D87F6ZCVE5NK| 1     | Not as Advertised     | Product arrived labeled as Jumbo Salted Peanut... |
+
+"Good Quality Dog Food": 质量好的狗粮。<br>
+
+"I have bought several of the Vitality canned...": 说话者已经购买了好几个“Vitality”品牌的罐装产品。"canned"一词通常指的是罐装产品。<br>
+
+"Not as Advertised": 意思是产品实际上并不符合广告或宣传中的描述。通常这表示消费者对于购买的产品感到失望，因为它没有达到他们根据广告所期待的标准或品质。<br>
+
+"Product arrived labeled as Jumbo Salted Peanut...": 意思是收到的产品上的标签显示它是“Jumbo Salted Peanut”，即巨型盐味花生。<br>
+
+We will combine the review summary and review text into a single combined text. The model will encode this combined text and output a single vector embedding.<br>
+
+我们将把评审摘要和评审文本合并为一个统一的文本。模型将对这个合并后的文本进行编码，并输出一个单一的词向量。<br>
+
+⚠️注意:这里不展示数据集的加载，只展示关键代码的使用:<br>
+
+```python
+from openai import OpenAI
+client = OpenAI()
+
+def get_embedding(text, model="text-embedding-3-small"):
+   text = text.replace("\n", " ")
+   return client.embeddings.create(input = [text], model=model).data[0].embedding
+
+df['ada_embedding'] = df.combined.apply(lambda x: get_embedding(x, model='text-embedding-3-small'))
+df.to_csv('output/embedded_1k_reviews.csv', index=False)
+```
+
+To load the data from a saved file, you can run the following:<br>
+
+要从保存的文件中加载数据，你可以运行以下代码：<br>
+
+```python
+import pandas as pd
+
+df = pd.read_csv('output/embedded_1k_reviews.csv')
+df['ada_embedding'] = df.ada_embedding.apply(eval).apply(np.array)
+```
+
+#### Reducing embedding dimensions(降低词向量维度):
+
+Using larger embeddings, for example storing them in a vector store for retrieval(检索), generally(通常) costs more and consumes(消耗) more compute(计算；计算资源), memory and storage(存储空间) than using smaller embeddings.<br>
+
+使用较大的嵌入向量，例如将它们存储在向量存储库中以便检索，通常比使用较小的嵌入向量成本更高，且消耗更多的计算资源、内存和存储空间。<br>
+
+Both of our new embedding models were trained [with a technique](https://arxiv.org/abs/2205.13147) that allows developers to trade-off(权衡) performance and cost of using embeddings. <br>
+
+> 跳转链接中是一篇论文。
+> "trade-off"意味着在两个或多个相互关联的因素、属性或行动之间进行权衡或妥协。通常，这涉及到在一个方面获得利益的同时，在另一个方面承担损失或削减某些优势。
+
+我们的两个新嵌入模型都采用了一种技术进行训练，该技术允许开发者在使用嵌入向量时**权衡**性能和成本。<br>
+
+Specifically, developers can shorten embeddings (i.e. remove some numbers from the end of the sequence) without the embedding losing its concept-representing properties by passing in the dimensions API parameter. <br>
+
+具体来说，开发者可以通过传递维度API参数来缩短嵌入向量的长度（即从序列末尾删除一些数字），而不会丢失嵌入向量表示概念的属性。<br>
+
+For example, on the MTEB benchmark, a `text-embedding-3-large` embedding can be shortened to a size of 256 while still outperforming(表现的更好) an unshortened `text-embedding-ada-002` embedding with a size of 1536. <br>
+
+> 说明 `text-embedding-3-large` 比 `text-embedding-ada-002` 强大的多的多的多。类似于 Bert 区别于 LSTM。
+
+例如，在MTEB基准测试上，一个 `text-embedding-3-large` 嵌入向量可以缩短到256的大小，而仍然比未缩短的text-embedding-ada-002嵌入向量（大小为1536）表现得更好。<br>
+
+You can read more about how changing the dimensions impacts performance in our [embeddings v3 launch blog post](https://openai.com/blog/new-embedding-models-and-api-updates).<br>
+
+你可以在我们的嵌入向量v3发布博客文章中阅读更多关于改变维度如何影响性能的信息。<br>
+
+In general, using the dimensions parameter when creating the embedding is the suggested approach. <br>
+
+一般来说，生成词向量时使用维度参数是推荐的方法。<br>
+
+In certain cases, you may need to change the embedding dimension after you generate it. When you change the dimension manually, you need to be sure to normalize(标准化) the dimensions of the embedding as is shown below.<br>
+
+在某些情况下，你可能需要在生成词向量后改变其维度。当你手动改变维度时，需要确保按照下面所示标准化词向量的维度。<br>
+
+```python
+from openai import OpenAI
+import numpy as np
+
+client = OpenAI()
+
+def normalize_l2(x):
+    x = np.array(x)
+    """
+    如果输入x是一维数组（单个向量），函数计算其L2范数。如果范数不为零，x通过除以其范数进行归一化。如果范数为零，x不变返回，因为零向量无法归一化。
+    """
+    if x.ndim == 1:
+        norm = np.linalg.norm(x)
+        if norm == 0:
+            return x
+        return x / norm
+    """
+    如果x是多维数组（向量矩阵），函数沿指定轴（axis=1对应行）为每个向量计算L2范数。然后，矩阵中的每个向量都通过其范数进行归一化。范数为零的向量不变返回。keepdims=True参数确保输出数组与输入数组具有相同的维度，以便进行除法操作的广播。
+    """
+    else:
+        norm = np.linalg.norm(x, 2, axis=1, keepdims=True)
+        return np.where(norm == 0, x, x / norm)
+
+
+response = client.embeddings.create(
+    model="text-embedding-3-small", input="Testing 123", encoding_format="float"
+)
+
+cut_dim = response.data[0].embedding[:256]
+norm_dim = normalize_l2(cut_dim)
+
+print(norm_dim)
+```
+
+请将下列内容翻译为地道的中文:
