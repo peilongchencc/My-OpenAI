@@ -103,7 +103,7 @@ Consider embeddings-only search as a starting point for your own system. <br>
 
 将仅基于词向量的搜索视为你自己系统的起点。<br>
 
-🫠🫠🫠**本文档仅介绍基于词向量的搜索，更好的搜索系统不展示，但可以参考以下方案。**🚀🚀🚀<br>
+🫠🫠🫠 **本文档仅介绍基于词向量的搜索，更好的搜索系统不展示，但可以参考以下方案。** 🚀🚀🚀<br>
 
 Better search systems might combine multiple search methods, along with features like popularity, recency, user history, redundancy with prior search results, click rate data, etc.<br> 
 
