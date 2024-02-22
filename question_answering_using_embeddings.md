@@ -99,9 +99,15 @@ This example notebook uses embedding-based search. Embeddings are simple to impl
 
 本示例notebook使用基于词向量的搜索方式。Embeddings简单易行，尤其适用于问题搜索，因为问题的文字往往与其答案不直接重叠。<br>
 
-Consider embeddings-only search as a starting point for your own system. Better search systems might combine multiple search methods, along with features like popularity, recency, user history, redundancy with prior search results, click rate data, etc.<br> 
+Consider embeddings-only search as a starting point for your own system. <br>
 
-将仅基于词向量的搜索视为你自己系统的起点。更好的搜索系统可能会结合多种搜索方法，以及诸如流行度、最新性、用户历史记录、与之前搜索结果的重复度、点击率数据等特征。<br>
+将仅基于词向量的搜索视为你自己系统的起点。<br>
+
+🫠🫠🫠本文档仅介绍基于词向量的搜索，更好的搜索系统不展示，但可以参考以下方案。🚀🚀🚀<br>
+
+Better search systems might combine multiple search methods, along with features like popularity, recency, user history, redundancy with prior search results, click rate data, etc.<br> 
+
+更好的搜索系统可能会结合多种搜索方法，以及诸如流行度、最新性、用户历史记录、与之前搜索结果的重复度、点击率数据等特征。<br>
 
 Q&A retrieval(检索) performance(性能) may also be improved with techniques like [HyDE](https://arxiv.org/abs/2212.10496), in which questions are first transformed into hypothetical(假设的) answers before being embedded. Similarly, GPT can also potentially(潜在的) improve search results by automatically transforming questions into sets of keywords or search terms.<br>
 
