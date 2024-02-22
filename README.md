@@ -54,6 +54,10 @@
       - [Question answering using embeddings-based search(基于词向量检索进行问题回答):](#question-answering-using-embeddings-based-search基于词向量检索进行问题回答)
       - [其他示例与上述用法相似，这里就不多介绍。](#其他示例与上述用法相似这里就不多介绍)
     - [Frequently asked questions(常见问题解答):](#frequently-asked-questions常见问题解答)
+      - [Example code(示例代码):](#example-code示例代码)
+      - [How can I retrieve K nearest embedding vectors quickly?(如何快速检索K个最近的嵌入向量)](#how-can-i-retrieve-k-nearest-embedding-vectors-quickly如何快速检索k个最近的嵌入向量)
+      - [Which distance function should I use?(应该使用哪种距离函数)](#which-distance-function-should-i-use应该使用哪种距离函数)
+      - [Do V3 embedding models know about recent events?(V3嵌入模型知道最近的事件吗)](#do-v3-embedding-models-know-about-recent-eventsv3嵌入模型知道最近的事件吗)
 
 "Head to chat.openai.com."：这部分是一个建议或指令，意思是“前往 chat.openai.com。”。“Head to”是一个常用的英语短语，用来建议某人去某个地方。在这里，它意味着如果你想使用或了解更多关于ChatGPT的信息，应该访问网址“chat.openai.com”，这是一个特定的网站链接。<br>
 
@@ -1064,7 +1068,7 @@ In Python, you can split a string into tokens with OpenAI's tokenizer tiktoken.<
 
 在Python中，你可以使用OpenAI的分词器 `tiktoken` 将字符串分割成tokens。<br>
 
-Example code(示例代码):<br>
+#### Example code(示例代码):
 
 ```python
 import tiktoken
@@ -1107,3 +1111,41 @@ TikToken 支持 OpenAI 模型使用的三种编码：<br>
 
 `tiktoken` [详解](https://cookbook.openai.com/examples/how_to_count_tokens_with_tiktoken)。<br>
 
+For third-generation embedding models like `text-embedding-3-small`, use the `cl100k_base` encoding.<br>
+
+对于第三代嵌入模型，如 `text-embedding-3-small` ，请使用 `cl100k_base` 编码。<br>
+
+More details and example code are in the OpenAI Cookbook guide [how to count tokens with tiktoken](https://cookbook.openai.com/examples/how_to_count_tokens_with_tiktoken).<br>
+
+更多细节和示例代码，请参考OpenAI Cookbook指南中的如何使用tiktoken计算tokens。<br>
+
+#### How can I retrieve K nearest embedding vectors quickly?(如何快速检索K个最近的嵌入向量)
+
+For searching over many vectors quickly, we recommend using a vector database. You can find examples of working with vector databases and the OpenAI API in our [Cookbook](https://cookbook.openai.com/examples/vector_databases/readme) on GitHub.<br>
+
+> 笔者使用的 zilliz，也就是 milvus 向量数据库。
+
+为了快速搜索许多向量，我们推荐使用向量数据库。你可以在我们的GitHub上的Cookbook中找到使用向量数据库和OpenAI API的示例。<br>
+
+#### Which distance function should I use?(应该使用哪种距离函数)
+
+We recommend cosine similarity. The choice of distance function typically(通常) doesn’t matter much.<br>
+
+我们推荐使用余弦相似度。距离函数的选择通常影响不大。<br>
+
+OpenAI embeddings are normalized(标准化) to length 1, which means that:<br>
+
+OpenAI的嵌入向量被标准化到长度1，这意味着：<br>
+
+- Cosine similarity can be computed slightly faster using just a dot product(使用点积可以稍微更快地计算余弦相似度)
+- Cosine similarity and Euclidean distance will result in the identical(完全相同的) rankings(余弦相似度和欧几里得距离将产生相同的排名)
+
+#### Do V3 embedding models know about recent events?(V3嵌入模型知道最近的事件吗)
+
+No, the `text-embedding-3-large` and `text-embedding-3-small` models lack(缺少) knowledge of events that occurred after September 2021. <br>
+
+不，text-embedding-3-large和text-embedding-3-small模型不了解2021年9月之后发生的事件。<br>
+
+This is generally not as much of a limitation as it would be for text generation models but in certain edge cases it can reduce performance.<br>
+
+这通常不像对于文本生成模型那样是一个限制，但在某些边缘情况下，它可能会降低性能。<br>
