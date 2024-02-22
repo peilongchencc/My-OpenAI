@@ -1,4 +1,7 @@
 # question_answering_using_embeddings
+
+文档中完整代码见 `question_answering_using_embeddings.py` 文件。<br>
+
 - [question\_answering\_using\_embeddings](#question_answering_using_embeddings)
   - [Why search is better than fine-tuning(为什么搜索优于微调):](#why-search-is-better-than-fine-tuning为什么搜索优于微调)
   - [Search(搜索):](#search搜索)
@@ -7,6 +10,10 @@
   - [Preamble(前言):](#preamble前言)
     - [Motivating example: GPT cannot answer questions about current events](#motivating-example-gpt-cannot-answer-questions-about-current-events)
   - [1. Prepare search data(准备搜索数据):](#1-prepare-search-data准备搜索数据)
+  - [3. Ask(询问)](#3-ask询问)
+  - [Example questions](#example-questions)
+  - [Troubleshooting wrong answers](#troubleshooting-wrong-answers)
+  - [More examples(更多)](#more-examples更多)
   - [知识拓展](#知识拓展)
     - [在NLP领域，什么因素决定了模型的输入长度？](#在nlp领域什么因素决定了模型的输入长度)
     - [为什么chatgpt可以用几千甚至几万长度的输入:](#为什么chatgpt可以用几千甚至几万长度的输入)
@@ -186,6 +193,14 @@ pip install openai
 After installing, restart the notebook kernel so the libraries can be loaded.<br>
 
 安装完成后，重启notebook内核，以便可以加载库。<br>
+
+安装scipy时提示了下列内容，但终究显示成功安装，后续如果出问题再从这里下手找解决方案:<br>
+
+```txt
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+gradio 4.16.0 requires pydantic>=2.0, but you have pydantic 1.10.12 which is incompatible.
+Successfully installed numpy-1.26.3 scipy-1.12.0
+```
 
 **Troubleshooting: Setting your API key(故障排除：设置你的 API 密钥)**<br>
 
@@ -649,7 +664,313 @@ Now we'll define a search function that:<br>
     - The top N texts, ranked by relevance(按相关性排名的前 N 个文本)
     - Their corresponding relevance scores(它们对应的相关性分数)
 
+```python
+# search function
+def strings_ranked_by_relatedness(
+    query: str,
+    df: pd.DataFrame,
+    relatedness_fn=lambda x, y: 1 - spatial.distance.cosine(x, y),
+    top_n: int = 100
+) -> tuple[list[str], list[float]]:
+    """Returns a list of strings and relatednesses, sorted from most related to least."""
+    query_embedding_response = client.embeddings.create(
+        model=EMBEDDING_MODEL,
+        input=query,
+    )
+    query_embedding = query_embedding_response.data[0].embedding
+    strings_and_relatednesses = [
+        (row["text"], relatedness_fn(query_embedding, row["embedding"]))
+        for i, row in df.iterrows()
+    ]
+    strings_and_relatednesses.sort(key=lambda x: x[1], reverse=True)
+    strings, relatednesses = zip(*strings_and_relatednesses)
+    return strings[:top_n], relatednesses[:top_n]
+```
 
+`relatedness_fn=lambda x, y: 1 - spatial.distance.cosine(x, y)`是一个Python表达式，定义了一个名为`relatedness_fn`的函数，该函数用于计算两个向量`x`和`y`之间的相似度或相关性。这个函数是在使用`lambda`函数（一个匿名函数）的基础上定义的，并且依赖于`scipy.spatial.distance.cosine`函数来计算**余弦距离**。<br>
+
+## 3. Ask(询问)
+
+With the search function above, we can now automatically retrieve relevant knowledge and insert it into messages to GPT.<br>
+
+通过上述的搜索功能，我们现在可以自动检索相关知识并将其插入到发往GPT的消息中。<br>
+
+Below, we define a function ask that(下面，我们定义了一个名为“查询”的函数，该函数):<br>
+
+- Takes a user query(接收用户的查询请求)
+- Searches for text relevant to the query(搜索与查询相关的文本)
+- Stuffs(在这里的意思是“填充”或“塞入”) that text into a message for GPT(将该文本填充到发往GPT的消息中)
+- Sends the message to GPT(将消息发送给GPT)
+- Returns GPT's answer(返回GPT的回答)
+
+```python
+def num_tokens(text: str, model: str = GPT_MODEL) -> int:
+    """Return the number of tokens in a string."""
+    encoding = tiktoken.encoding_for_model(model)
+    return len(encoding.encode(text))
+
+
+def query_message(
+    query: str,
+    df: pd.DataFrame,
+    model: str,
+    token_budget: int
+) -> str:
+    """Return a message for GPT, with relevant source texts pulled from a dataframe."""
+    strings, relatednesses = strings_ranked_by_relatedness(query, df)
+    introduction = 'Use the below articles on the 2022 Winter Olympics to answer the subsequent question. If the answer cannot be found in the articles, write "I could not find an answer."'
+    question = f"\n\nQuestion: {query}"
+    message = introduction
+    for string in strings:
+        next_article = f'\n\nWikipedia article section:\n"""\n{string}\n"""'
+        if (
+            num_tokens(message + next_article + question, model=model)
+            > token_budget
+        ):
+            break
+        else:
+            message += next_article
+    return message + question
+
+
+def ask(
+    query: str,
+    df: pd.DataFrame = df,
+    model: str = GPT_MODEL,
+    token_budget: int = 4096 - 500,
+    print_message: bool = False,
+) -> str:
+    """Answers a query using GPT and a dataframe of relevant texts and embeddings."""
+    message = query_message(query, df, model=model, token_budget=token_budget)
+    if print_message:
+        print(message)
+    messages = [
+        {"role": "system", "content": "You answer questions about the 2022 Winter Olympics."},
+        {"role": "user", "content": message},
+    ]
+    response = client.chat.completions.create(
+        model=model,
+        messages=messages,
+        temperature=0
+    )
+    response_message = response.choices[0].message.content
+    return response_message
+```
+
+## Example questions
+
+Finally, let's ask our system our original(最初的) question about gold medal(奖章；获得奖牌) curlers:<br>
+
+最后，让我们用我们最初的问题询问我们的系统关于冬季奥运会冰壶金牌获得者的信息：<br>
+
+```python
+# 2022年冬季奥运会冰壶比赛中哪些运动员赢得了金牌？
+print(ask('Which athletes won the gold medal in curling at the 2022 Winter Olympics?'))
+```
+
+终端显示:<br>
+
+```txt
+"In the men's curling tournament, the gold medal was won by the team from Sweden, consisting of Niklas Edin, Oskar Eriksson, Rasmus Wranå, Christoffer Sundgren, and Daniel Magnusson. In the women's curling tournament, the gold medal was won by the team from Great Britain, consisting of Eve Muirhead, Vicky Wright, Jennifer Dodds, Hailey Duff, and Mili Smith."
+```
+
+意思是:<br>
+
+```txt
+"在男子冰壶比赛中，金牌由瑞典队赢得，队员包括Niklas Edin, Oskar Eriksson, Rasmus Wranå, Christoffer Sundgren, 和 Daniel Magnusson。在女子冰壶比赛中，金牌由英国队赢得，队员包括Eve Muirhead, Vicky Wright, Jennifer Dodds, Hailey Duff, 和 Mili Smith。"
+```
+
+Despite `gpt-3.5-turbo` having no knowledge of the 2022 Winter Olympics, our search system was able to retrieve reference text for the model to read, allowing it to correctly list the gold medal winners in the Men's and Women's tournaments.<br>
+
+尽管gpt-3.5-turbo对2022年冬季奥运会没有知识，我们的搜索系统还是能够为模型检索参考文本，使其能够正确列出男子和女子比赛的金牌获得者。<br>
+
+However, it still wasn't quite perfect—the model failed to list the gold medal winners from the Mixed doubles event.<br>
+
+然而，它仍然不够完美——模型未能列出混合双打项目的金牌获得者。<br>
+
+
+## Troubleshooting wrong answers
+
+To see whether a mistake is from a lack(缺少) of relevant source text (i.e., failure of the search step) or a lack of reasoning reliability (i.e., failure of the ask step), you can look at the text GPT was given by setting `print_message=True`.<br>
+
+要判断一个错误是因为缺乏相关的源文本（即，搜索步骤失败）还是因为缺乏推理的可靠性（即，提问步骤失败），你可以通过设置 `print_message=True` 来查看 GPT 被给予的文本。<br>
+
+In this particular(特定的) case, looking at the text below, it looks like the #1 article given to the model did contain medalists(获奖者) for all three events, but the later results emphasized(强调) the Men's and Women's tournaments(锦标赛；比赛), which may have distracted(使分心) the model from giving a more complete answer.<br>
+
+在这个特定的案例中，查看下面的文本，看起来像是给模型的第一篇文章确实包含了所有三项赛事的奖牌得主，但后续的结果强调了男子和女子比赛，这可能让模型分心，未能给出一个更完整的答案。<br>
+
+```python
+# set print_message=True to see the source text GPT was working off of
+# 设置 `print_message=True` 查看GPT被给予的文本
+print(ask('Which athletes won the gold medal in curling at the 2022 Winter Olympics?', print_message=True))
+```
+
+终端显示如下:<br>
+
+```txt
+Use the below articles on the 2022 Winter Olympics to answer the subsequent question. If the answer cannot be found in the articles, write "I could not find an answer."
+
+Wikipedia article section:
+"""
+List of 2022 Winter Olympics medal winners
+
+==Curling==
+
+{{main|Curling at the 2022 Winter Olympics}}
+{|{{MedalistTable|type=Event|columns=1|width=225|labelwidth=200}}
+|-valign="top"
+|Men<br/>{{DetailsLink|Curling at the 2022 Winter Olympics – Men's tournament}}
+|{{flagIOC|SWE|2022 Winter}}<br/>[[Niklas Edin]]<br/>[[Oskar Eriksson]]<br/>[[Rasmus Wranå]]<br/>[[Christoffer Sundgren]]<br/>[[Daniel Magnusson (curler)|Daniel Magnusson]]
+|{{flagIOC|GBR|2022 Winter}}<br/>[[Bruce Mouat]]<br/>[[Grant Hardie]]<br/>[[Bobby Lammie]]<br/>[[Hammy McMillan Jr.]]<br/>[[Ross Whyte]]
+|{{flagIOC|CAN|2022 Winter}}<br/>[[Brad Gushue]]<br/>[[Mark Nichols (curler)|Mark Nichols]]<br/>[[Brett Gallant]]<br/>[[Geoff Walker (curler)|Geoff Walker]]<br/>[[Marc Kennedy]]
+|-valign="top"
+|Women<br/>{{DetailsLink|Curling at the 2022 Winter Olympics – Women's tournament}}
+|{{flagIOC|GBR|2022 Winter}}<br/>[[Eve Muirhead]]<br/>[[Vicky Wright]]<br/>[[Jennifer Dodds]]<br/>[[Hailey Duff]]<br/>[[Mili Smith]]
+|{{flagIOC|JPN|2022 Winter}}<br/>[[Satsuki Fujisawa]]<br/>[[Chinami Yoshida]]<br/>[[Yumi Suzuki]]<br/>[[Yurika Yoshida]]<br/>[[Kotomi Ishizaki]]
+|{{flagIOC|SWE|2022 Winter}}<br/>[[Anna Hasselborg]]<br/>[[Sara McManus]]<br/>[[Agnes Knochenhauer]]<br/>[[Sofia Mabergs]]<br/>[[Johanna Heldin]]
+|-valign="top"
+|Mixed doubles<br/>{{DetailsLink|Curling at the 2022 Winter Olympics – Mixed doubles tournament}}
+|{{flagIOC|ITA|2022 Winter}}<br/>[[Stefania Constantini]]<br/>[[Amos Mosaner]]
+|{{flagIOC|NOR|2022 Winter}}<br/>[[Kristin Skaslien]]<br/>[[Magnus Nedregotten]]
+|{{flagIOC|SWE|2022 Winter}}<br/>[[Almida de Val]]<br/>[[Oskar Eriksson]]
+|}
+"""
+
+Wikipedia article section:
+"""
+Curling at the 2022 Winter Olympics
+
+==Results summary==
+
+===Women's tournament===
+
+====Playoffs====
+
+=====Gold medal game=====
+
+''Sunday, 20 February, 9:05''
+{{#lst:Curling at the 2022 Winter Olympics – Women's tournament|GM}}
+{{Player percentages
+| team1 = {{flagIOC|JPN|2022 Winter}}
+| [[Yurika Yoshida]] | 97%
+| [[Yumi Suzuki]] | 82%
+| [[Chinami Yoshida]] | 64%
+| [[Satsuki Fujisawa]] | 69%
+| teampct1 = 78%
+| team2 = {{flagIOC|GBR|2022 Winter}}
+| [[Hailey Duff]] | 90%
+| [[Jennifer Dodds]] | 89%
+| [[Vicky Wright]] | 89%
+| [[Eve Muirhead]] | 88%
+| teampct2 = 89%
+}}
+"""
+
+Wikipedia article section:
+"""
+Curling at the 2022 Winter Olympics
+
+==Medal summary==
+
+===Medal table===
+
+{{Medals table
+ | caption        = 
+ | host           = 
+ | flag_template  = flagIOC
+ | event          = 2022 Winter
+ | team           = 
+ | gold_CAN = 0 | silver_CAN = 0 | bronze_CAN = 1
+ | gold_ITA = 1 | silver_ITA = 0 | bronze_ITA = 0
+ | gold_NOR = 0 | silver_NOR = 1 | bronze_NOR = 0
+ | gold_SWE = 1 | silver_SWE = 0 | bronze_SWE = 2
+ | gold_GBR = 1 | silver_GBR = 1 | bronze_GBR = 0
+ | gold_JPN = 0 | silver_JPN = 1 | bronze_JPN - 0
+}}
+"""
+
+Wikipedia article section:
+"""
+Curling at the 2022 Winter Olympics
+
+==Results summary==
+
+===Men's tournament===
+
+====Playoffs====
+... ...
+```
+
+Knowing that this mistake was due to imperfect(不完美；有缺点的) reasoning in the ask step, rather than imperfect retrieval in the search step, let's focus on improving the ask step.<br>
+
+了解到这个错误是因为提问步骤中的询问，而不是搜索步骤中的检索不完美，我们就专注于改善提问步骤。<br>
+
+The easiest way to improve results is to use a more capable model, such as `GPT-4`. Let's try it.<br>
+
+改善结果的最简单方式是使用更强大的模型，比如 `GPT-4` ，让我们试试看。<br>
+
+```python
+# use more powerful model
+print(ask('Which athletes won the gold medal in curling at the 2022 Winter Olympics?', model="gpt-4"))
+```
+
+终端显示:<br>
+
+```txt
+"The athletes who won the gold medal in curling at the 2022 Winter Olympics are:\n\nMen's tournament: Niklas Edin, Oskar Eriksson, Rasmus Wranå, Christoffer Sundgren, and Daniel Magnusson from Sweden.\n\nWomen's tournament: Eve Muirhead, Vicky Wright, Jennifer Dodds, Hailey Duff, and Mili Smith from Great Britain.\n\nMixed doubles tournament: Stefania Constantini and Amos Mosaner from Italy."
+```
+
+意思是:<br>
+
+```txt
+在2022年冬季奥运会上获得冰壶项目金牌的运动员有：
+
+男子比赛：来自瑞典的Niklas Edin、Oskar Eriksson、Rasmus Wranå、Christoffer Sundgren和Daniel Magnusson。
+
+女子比赛：来自英国的Eve Muirhead、Vicky Wright、Jennifer Dodds、Hailey Duff和Mili Smith。
+
+混合双人比赛：来自意大利的Stefania Constantini和Amos Mosaner。
+```
+
+GPT-4 succeeds perfectly, correctly identifying all 12 gold medal winners in curling.<br>
+
+GPT-4 完美成功，准确识别了冰壶项目所有12位金牌获得者。<br>
+
+
+## More examples(更多)
+
+Below are a few more examples of the system in action. Feel free to try your own questions, and see how it does. <br>
+
+> "Feel free":鼓励某人在没有限制或顾虑的情况下做某事。
+
+以下是一些系统运行中的更多示例。欢迎尝试你自己的问题，看看它的表现如何。<br>
+
+In general, search-based systems do best on questions that have a simple lookup, and worst on questions that require multiple partial sources to be combined and reasoned(合理的；推理) about.<br>
+
+> "reasoned" 为 "reason" 的过去分词和过去式，adj. 合理的;合乎逻辑的;缜密的 v. 推理;理解;思考;推断;推论
+
+通常情况下，基于搜索的系统在需要简单查找的问题上表现最好，而在需要结合和推理多个部分信息源的问题上表现最差。<br>
+
+```python
+# counting(计算) question,2022年冬季奥林匹克运动会创造了多少记录？
+print(ask('How many records were set at the 2022 Winter Olympics?'))
+# 'I could not find an answer.'
+```
+
+```python
+# comparison(比较) question, 牙买加或古巴在2022年冬季奥运会上的运动员更多吗？
+print(ask('Did Jamaica or Cuba have more athletes at the 2022 Winter Olympics?'))
+
+# "Jamaica had more athletes at the 2022 Winter Olympics. According to the provided information, Jamaica had a total of 7 athletes (6 men and 1 woman) competing in 2 sports, while there is no information about Cuba's participation in the 2022 Winter Olympics."
+
+# “在2022年冬季奥运会上，牙买加的运动员更多。根据提供的信息，牙买加共有7名运动员（6男1女）参加了2项运动，而关于古巴参加2022年冬季奥运会的信息则没有。”
+```
+
+```python
+# subjective question(主观问题),哪项奥林匹克运动最有娱乐性(最有趣)？, entertaining adj. 娱乐的；有趣的
+print(ask('Which Olympic sport is the most entertaining?'))
+# 'I could not find an answer.'
+```
 
 
 ## 知识拓展
