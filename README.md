@@ -50,6 +50,8 @@
       - [Obtaining the embeddings(获取词向量):](#obtaining-the-embeddings获取词向量)
       - [Reducing embedding dimensions(降低词向量维度):](#reducing-embedding-dimensions降低词向量维度)
       - [验证 "手动降低维度" 和 "通过传参降低维度" 的区别:](#验证-手动降低维度-和-通过传参降低维度-的区别)
+      - [关于"`text-embedding-3-large` 词向量缩短到256的大小，而仍然比未缩短的text-embedding-ada-002嵌入向量（大小为1536）表现得更好"的一些思考:](#关于text-embedding-3-large-词向量缩短到256的大小而仍然比未缩短的text-embedding-ada-002嵌入向量大小为1536表现得更好的一些思考)
+      - [Question answering using embeddings-based search(基于词向量检索进行问题回答):](#question-answering-using-embeddings-based-search基于词向量检索进行问题回答)
 
 "Head to chat.openai.com."：这部分是一个建议或指令，意思是“前往 chat.openai.com。”。“Head to”是一个常用的英语短语，用来建议某人去某个地方。在这里，它意味着如果你想使用或了解更多关于ChatGPT的信息，应该访问网址“chat.openai.com”，这是一个特定的网站链接。<br>
 
@@ -823,7 +825,7 @@ For example, on the MTEB benchmark, a `text-embedding-3-large` embedding can be 
 
 > 说明 `text-embedding-3-large` 比 `text-embedding-ada-002` 强大的多的多的多。类似于 Bert 区别于 LSTM。
 
-例如，在MTEB基准测试上，一个 `text-embedding-3-large` 嵌入向量可以缩短到256的大小，而仍然比未缩短的text-embedding-ada-002嵌入向量（大小为1536）表现得更好。<br>
+例如，在MTEB基准测试上，一个 `text-embedding-3-large` 词向量缩短到256的大小，而仍然比未缩短的text-embedding-ada-002嵌入向量（大小为1536）表现得更好。<br>
 
 You can read more about how changing the dimensions impacts performance in our [embeddings v3 launch blog post](https://openai.com/blog/new-embedding-models-and-api-updates).<br>
 
@@ -987,3 +989,61 @@ norm_dim和para_dim是否几乎相等: True
 ```
 
 🚀🚀🚀由此可以确定，官方给出的 "手动降低维度" 代码即 "传参降低维度" 代码，2者效果相同。<br>
+
+#### 关于"`text-embedding-3-large` 词向量缩短到256的大小，而仍然比未缩短的text-embedding-ada-002嵌入向量（大小为1536）表现得更好"的一些思考:
+
+推荐OpenAI采用了一些特殊手段，将关键信息集中在了词向量维度的前半部分，所以在词向量降维的时候才会强行截取前n维度。<br>
+
+词向量维度为1563，也就是1563个特征，但每个特征含有的信息量并不均衡。假设OpenAI将80%的信息量集中在了前200的维度，**"`text-embedding-3-large` 词向量缩短到256的大小，而仍然比未缩短的text-embedding-ada-002嵌入向量（大小为1536）表现得更好"** 就可以得到合理的解释。<br>
+
+另外，我们一般降维采用的都是在模型结构后面**加一个全连接层**，但由于OpenAI并未开放模型代码，所以这种方式是无法实现的。<br>
+
+
+#### Question answering using embeddings-based search(基于词向量检索进行问题回答):
+
+There are many common cases where the model is not trained on data which contains key facts and information you want to make accessible(可访问的；可获取的) when generating responses to a user query.<br> 
+
+> “accessible”在这里指的是使关键事实和信息易于在生成响应时被访问和利用。
+
+在很多常见情况下，模型并没有针对包含你希望在回答用户查询时访问的关键事实和信息的数据进行训练。<br>
+
+One way of solving this, as shown below, is to put additional(额外的) information into the context window of the model. <br>
+
+解决这个问题的一种方式，如下所示，是将额外的信息放入模型的上下文窗口中。<br>
+
+This is effective(有效的) in many use cases but leads to higher token costs. In this notebook, we explore the tradeoff between this approach and embeddings bases search.<br>
+
+这在许多用例中是有效的，但会导致更高的token成本。在这个notebook中，我们探讨这种方法与基于词向量的检索之间的权衡。<br>
+
+```python
+query = f"""Use the below article on the 2022 Winter Olympics to answer the subsequent question. If the answer cannot be found, write "I don't know."
+
+Article:
+\"\"\"
+{wikipedia_article_on_curling}
+\"\"\"
+
+Question: Which athletes won the gold medal in curling at the 2022 Winter Olympics?"""
+
+# 上述query的翻译:
+
+# 请使用以下关于2022年冬季奥运会的文章来回答随后的(subsequent)问题。如果找不到答案，请回答“我不知道。”
+
+# 文章：
+# ```
+# {关于冰壶(curling)的维基百科(wikipedia)文章}
+# ```
+
+# 问题：哪些运动员在2022年冬季奥运会上赢得了冰壶项目的金牌？
+
+response = client.chat.completions.create(
+    messages=[
+        {'role': 'system', 'content': 'You answer questions about the 2022 Winter Olympics.'},  # 你回答关于2022年冬季奥运会的问题。
+        {'role': 'user', 'content': query},
+    ],
+    model=GPT_MODEL,
+    temperature=0,
+)
+
+print(response.choices[0].message.content)
+```
