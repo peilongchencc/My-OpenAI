@@ -633,6 +633,22 @@ df
 | 6057 | Uliana Nigmatullina\n==Biathlon results==\n... | [-0.024266039952637565, 0.011665306985378265, ... |
 | 6058 | Uliana Nigmatullina\n==Biathlon results==\n... | [-0.021818075329365323, 0.005420385394245386, ... |
 
+6059 rows × 2 columns<br>
+
+
+2. Search(搜索)
+
+Now we'll define a search function that:<br>
+
+我们来定义一个搜索函数，具体要求如下：<br>
+
+- Takes a user query and a dataframe with text & embedding columns(接收用户查询和一个包含文本和嵌入列的数据框)
+- Embeds the user query with the OpenAI API(利用 OpenAI API 对用户查询进行嵌入)
+- Uses distance between query embedding and text embeddings to rank the texts(使用查询嵌入和文本嵌入之间的距离对文本进行排序)
+- Returns two lists:(返回两个列表)
+    - The top N texts, ranked by relevance(按相关性排名的前 N 个文本)
+    - Their corresponding relevance scores(它们对应的相关性分数)
+
 
 
 
