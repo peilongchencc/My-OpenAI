@@ -52,6 +52,8 @@
       - [验证 "手动降低维度" 和 "通过传参降低维度" 的区别:](#验证-手动降低维度-和-通过传参降低维度-的区别)
       - [关于"`text-embedding-3-large` 词向量缩短到256的大小，而仍然比未缩短的text-embedding-ada-002嵌入向量（大小为1536）表现得更好"的一些思考:](#关于text-embedding-3-large-词向量缩短到256的大小而仍然比未缩短的text-embedding-ada-002嵌入向量大小为1536表现得更好的一些思考)
       - [Question answering using embeddings-based search(基于词向量检索进行问题回答):](#question-answering-using-embeddings-based-search基于词向量检索进行问题回答)
+      - [其他示例与上述用法相似，这里就不多介绍。](#其他示例与上述用法相似这里就不多介绍)
+    - [Frequently asked questions(常见问题解答):](#frequently-asked-questions常见问题解答)
 
 "Head to chat.openai.com."：这部分是一个建议或指令，意思是“前往 chat.openai.com。”。“Head to”是一个常用的英语短语，用来建议某人去某个地方。在这里，它意味着如果你想使用或了解更多关于ChatGPT的信息，应该访问网址“chat.openai.com”，这是一个特定的网站链接。<br>
 
@@ -1047,3 +1049,61 @@ response = client.chat.completions.create(
 
 print(response.choices[0].message.content)
 ```
+
+#### 其他示例与上述用法相似，这里就不多介绍。
+
+请将下列内容翻译为地道的中文：
+
+### Frequently asked questions(常见问题解答):
+
+How can I tell how many tokens a string has before I embed it?<br>
+
+如何在嵌入之前知道一个字符串有多少个tokens？<br>
+
+In Python, you can split a string into tokens with OpenAI's tokenizer tiktoken.<br>
+
+在Python中，你可以使用OpenAI的分词器 `tiktoken` 将字符串分割成tokens。<br>
+
+Example code(示例代码):<br>
+
+```python
+import tiktoken
+
+def num_tokens_from_string(string: str, encoding_name: str) -> int:
+    """Returns the number of tokens in a text string.
+    (返回一个文本字符串中的 tokens 数量。)
+    """
+    encoding = tiktoken.get_encoding(encoding_name)
+    exact_tokens = encoding.encode(string)
+    num_tokens = len(exact_tokens)
+    return exact_tokens, num_tokens
+
+exact_tokens_rtn, num_tokens_rtn = num_tokens_from_string("tiktoken is great!", "cl100k_base")
+print(exact_tokens_rtn) # [83, 1609, 5963, 374, 2294, 0]
+print(num_tokens_rtn)   # 6
+
+encoding = tiktoken.get_encoding("cl100k_base")
+restore_str = encoding.decode(exact_tokens_rtn)
+print(restore_str)  # tiktoken is great!
+
+token_byte = [encoding.decode_single_token_bytes(token) for token in exact_tokens_rtn]
+print(token_byte)   # [b't', b'ik', b'token', b' is', b' great', b'!']
+```
+
+函数 `num_tokens_from_string` 接受的2个参数如下:<br>
+
+- `string`: 要编码的文本字符串。
+- `encoding_name`: 编码名称，用于指定使用哪种文本编码方式。
+
+TikToken 支持 OpenAI 模型使用的三种编码：<br>
+
+```markdown
+| Encoding name | OpenAI models |
+|---------------|---------------|
+| cl100k_base    | gpt-4, gpt-3.5-turbo, text-embedding-ada-002, text-embedding-3-small, text-embedding-3-large |
+| p50k_base     | Codex models, text-davinci-002, text-davinci-003 |
+| r50k_base (or gpt2) | GPT-3 models like davinci |
+```
+
+`tiktoken` [详解](https://cookbook.openai.com/examples/how_to_count_tokens_with_tiktoken)。<br>
+
