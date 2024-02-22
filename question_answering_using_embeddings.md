@@ -53,7 +53,7 @@ GPT can learn knowledge in two ways(GPT可以通过两种方式学习知识):<br
 
 Although fine-tuning can feel like the more natural option—training on data is how GPT learned all of its other knowledge, after all—we generally do not recommend it as a way to teach the model knowledge. Fine-tuning is better suited to teaching specialized tasks or styles, and is less reliable(可靠的) for factual recall.<br>
 
-虽然微调感觉上可能是更自然的选择——**毕竟**，训练数据是GPT学习其所有其他知识的方式——我们通常不推荐它作为教授模型知识的方式。**微调更适合教授专门的任务或风格，并且对于事实召回来说不太可靠。**🚨🚨🚨<br>
+虽然微调感觉上可能是更自然的选择——**毕竟**，训练数据是GPT学习其所有其他知识的方式——我们通常不推荐它作为教授模型知识的方式。 **微调更适合教授专门的任务或风格，并且对于事实召回来说不太可靠。** 🚨🚨🚨<br>
 
 As an analogy(类比；比喻), model weights are like long-term memory. When you fine-tune a model, it's like studying for an exam a week away. When the exam arrives, the model may forget details, or misremember facts it never read.<br>
 
