@@ -12,6 +12,10 @@ load_dotenv(dotenv_path=dotenv_path)
 logger.remove()
 logger.add("openai_stream.log", rotation="1 GB", backtrace=True, diagnose=True, format="{time} {level} {message}")
 
+# 设置网络代理环境变量
+os.environ['http_proxy'] = os.getenv("HTTP_PROXY")
+os.environ['https_proxy'] = os.getenv("HTTPS_PROXY")
+
 # Your OpenAI API Key
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 

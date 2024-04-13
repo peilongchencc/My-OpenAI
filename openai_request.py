@@ -30,7 +30,7 @@ data = {
     "messages": [
         {
             "role": "user",
-            "content": "你是谁？"
+            "content": "请给我一份python打印输出的代码"
         }
     ]
 }
