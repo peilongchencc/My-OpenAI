@@ -1,9 +1,10 @@
 """
-@author:ChenPeilong(peilongchencc@163.com)
-@description:According to the content count token number through GPT3.5 & GPT4 encoding methods, the results are consistent with the official website's token calculation.
-@reference link:https://platform.openai.com/docs/guides/embeddings/frequently-asked-questions
+Author: peilongchencc@163.com
+Description: 
+Requirements: According to the content count token number through GPT3.5 & GPT4 encoding methods, the results are consistent with the official website's token calculation.
+Reference Link: https://platform.openai.com/docs/guides/embeddings/frequently-asked-questions
+Notes: 
 """
-
 import tiktoken
 
 def num_tokens_from_string(string: str, encoding_name: str) -> int:
