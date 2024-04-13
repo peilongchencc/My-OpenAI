@@ -1,6 +1,9 @@
 """
-@author:ChenPeilong(peilongchencc@163.com)
-@description:实现gradio交互界面,以异步方式让gradio接收给定API的流式输出。
+Author: peilongchencc@163.com
+Description: 
+Requirements: 异步方式接收FastAPI或Sanic以sse方式传输的数据,然后以界面方式呈现。
+Reference Link: 
+Notes: 
 """
 import json
 import aiohttp

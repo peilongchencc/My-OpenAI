@@ -1,6 +1,9 @@
 """
-@author:ChenPeilong(peilongchencc@163.com)
-@description:OpenAI streaming output example code with sanic.
+Author: peilongchencc@163.com
+Description: 
+Requirements: 异步方式实现Sanic调用OpenAI服务,结果以sse方式传输。
+Reference Link: 
+Notes: 
 """
 import os
 import json

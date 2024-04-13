@@ -1,6 +1,10 @@
 """
-@author:ChenPeilong(peilongchencc@163.com)
-@description:OpenAI streaming output example code.
+Author: peilongchencc@163.com
+Description: 
+Requirements: 同步写法,支持终端直接测试openai效果。
+Reference Link: 
+Notes: 
+前提:终端需能连接openai服务,或代码中支持代理。
 """
 import os
 from loguru import logger

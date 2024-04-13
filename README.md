@@ -2,16 +2,6 @@
 
 本文档基于OpenAI官网介绍，主要用于个人理解与API调用测试。<br>
 
-**文件介绍:**<br>
-
-- `fastapi_sse_example.py` : 异步方式实现fastapi调用OpenAI服务，结果以sse方式传输。
-
-- `sanic_sse_example.py` : 异步方式实现Sanic调用OpenAI服务，结果以sse方式传输。
-
-- `gradio_stream_openai.py` : 异步方式接收FastAPI或Sanic以sse方式传输的数据，然后以界面方式呈现。
-
-- `openai_test.py`: 同步写法，支持终端直接测试openai效果。(前提:终端需能连接openai服务)
-
 **OpenAI官网内容介绍:**<br>
 
 - [openai\_parse:](#openai_parse)
