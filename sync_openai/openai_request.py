@@ -12,8 +12,8 @@ logger.remove()
 logger.add("openai_stream.log", rotation="1 GB", backtrace=True, diagnose=True, format="{time} {level} {message}")
 
 # 设置代理环境变量
-os.environ['http_proxy'] = 'http://127.0.0.1:7890'
-os.environ['https_proxy'] = 'http://127.0.0.1:7890'
+# os.environ['http_proxy'] = 'http://127.0.0.1:7890'
+# os.environ['https_proxy'] = 'http://127.0.0.1:7890'
 
 # Your OpenAI API Key
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -30,7 +30,7 @@ data = {
     "messages": [
         {
             "role": "user",
-            "content": "请给我一份python打印输出的代码"
+            "content": "你的知识截止到什么时候？"
         }
     ]
 }
