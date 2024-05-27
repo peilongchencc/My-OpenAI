@@ -48,6 +48,7 @@
       - [How can I retrieve K nearest embedding vectors quickly?(如何快速检索K个最近的嵌入向量)](#how-can-i-retrieve-k-nearest-embedding-vectors-quickly如何快速检索k个最近的嵌入向量)
       - [Which distance function should I use?(应该使用哪种距离函数)](#which-distance-function-should-i-use应该使用哪种距离函数)
       - [Do V3 embedding models know about recent events?(V3嵌入模型知道最近的事件吗)](#do-v3-embedding-models-know-about-recent-eventsv3嵌入模型知道最近的事件吗)
+  - [chatgpt网页、websocket、https方式的长度限制:](#chatgpt网页websockethttps方式的长度限制)
 
 "Head to chat.openai.com."：这部分是一个建议或指令，意思是“前往 chat.openai.com。”。“Head to”是一个常用的英语短语，用来建议某人去某个地方。在这里，它意味着如果你想使用或了解更多关于ChatGPT的信息，应该访问网址“chat.openai.com”，这是一个特定的网站链接。<br>
 
@@ -1149,3 +1150,30 @@ No, the `text-embedding-3-large` and `text-embedding-3-small` models lack(缺少
 This is generally not as much of a limitation as it would be for text generation models but in certain edge cases it can reduce performance.<br>
 
 这通常不像对于文本生成模型那样是一个限制，但在某些边缘情况下，它可能会降低性能。<br>
+
+
+## chatgpt网页、websocket、https方式的长度限制:
+
+超长的文本输入到chatgpt的网页输入框中提示信息太长。<br>
+
+> 超长，但长度小于128K。
+
+这个可能是由于 **网页输入框限制** 导致的错误，ChatGPT网页输入框可能设置了特定的输入长度限制，以避免前端性能问题或用户体验问题。这些限制可能比后台API的限制更严格。
+
+代码使用 websocket 方式也提示信息太长:<br>
+
+```log
+Received 1009 (message too big) Max frame length of 32768 has been exceeded.
+```
+
+这个是WebSocket错误，消息帧大小超出了允许的限制。虽然GPT-4o的上下文长度限制是128K，但WebSocket实现通常有自己的帧大小限制，这个限制可能小得多。例如，帧大小限制为32KB。这意味着即使你的总输入长度在允许的128K以内，但任何单个帧的消息不得超过32KB。<br>
+
+具体来说，即使你的输入长度只有35430，但如果单个帧超过32KB，就会触发这个错误。为了避免这个问题，你可以考虑 **分块发送消息** 。<br>
+
+使用相同模型，采用aiohttp方式直接传给 "https://api.openai.com/v1/chat/completions" 是可以传输超长文本的，比如100K的tokens。<br>
+
+**WebSocket与HTTP API的实现差异**
+
+- **WebSocket限制**：WebSocket通常有较低的单帧大小限制（如32KB），这是为了保证实时通信的稳定性和效率。这在ChatGPT的网页输入框中可能会触发“消息太长”的错误。
+
+- **HTTP API**：通过HTTP API（如使用aiohttp发送POST请求）直接调用API时，通常可以发送更大的负载（如128KB的上下文长度限制），因为HTTP协议允许更大的单个请求体。
