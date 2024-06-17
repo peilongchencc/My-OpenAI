@@ -14,7 +14,7 @@ from loguru import logger
 from dotenv import load_dotenv
 
 # 加载环境变量
-dotenv_path = '.env.local'
+dotenv_path = 'env_config/.env.local'
 load_dotenv(dotenv_path=dotenv_path)
 
 # 设置日志
@@ -24,6 +24,21 @@ logger.add("openai_stream.log", rotation="1 GB", backtrace=True, diagnose=True, 
 # OpenAI API Key
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
+data_info = """
+请根据以下MySQL获取到的数据，针对用户输入进行回复。
+
+MySQL中查询到的数据为:
+|   employee_count |
+|-----------------:|
+|               15 |
+
+用户输入: 请问我一共有几个员工？
+
+回复要求:
+1. 禁止回复类似 "根据您的查询结果" 的内容。
+2. 如果markdown表格的形式呈现效果更好，请使用markdown表格的形式呈现。
+"""
+
 async def fetch_openai_completion():
     url = "https://api.openai.com/v1/chat/completions"
     headers = {
@@ -31,15 +46,15 @@ async def fetch_openai_completion():
         "Authorization": f"Bearer {OPENAI_API_KEY}"
     }
     data = {
-        "model": "gpt-3.5-turbo",
+        "model": "gpt-4o",
         "messages": [
-            {
-                "role": "system",
-                "content": "你是一名半导体方向的专家。"
-            },
+        #     {
+        #         "role": "system",
+        #         "content": "你是一名半导体方向的专家。"
+        #     },
             {
                 "role": "user",
-                "content": "在光路中，AMP是什么器件？"
+                "content": data_info
             }
         ]
     }
@@ -56,5 +71,6 @@ async def fetch_openai_completion():
     except Exception as e:
         logger.error(f"An error occurred: {e}")
 
-# 使用 asyncio.run() 直接运行异步函数
-asyncio.run(fetch_openai_completion())
+if __name__ == '__main__':
+    # 使用 asyncio.run() 直接运行异步函数
+    asyncio.run(fetch_openai_completion())
