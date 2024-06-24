@@ -1,6 +1,16 @@
 # OpenAI Vision
 
 本章介绍使用大模型与图片进行交互，例如用户上传一张图片，并提问 "图片中有什么？"，大模型会分析图片然后返回结果。<br>
+- [OpenAI Vision](#openai-vision)
+  - [传输方式:](#传输方式)
+  - [代码示例:](#代码示例)
+    - [传递图片链接示例:](#传递图片链接示例)
+    - [传递base64编码的图片示例:](#传递base64编码的图片示例)
+    - [Notes:](#notes)
+  - [模型局限性:](#模型局限性)
+  - [参数解释:](#参数解释)
+  - [FAQ (Frequently Asked Questions):](#faq-frequently-asked-questions)
+    - [为什么要将图片转化为base64编码格式？](#为什么要将图片转化为base64编码格式)
 
 
 ## 传输方式:
@@ -141,6 +151,10 @@ It is important to keep in mind the limitations of the model as you explore what
 - 元数据和调整大小：该模型不会处理原始文件名或元数据，图像在分析前会被调整大小，影响其原始尺寸。
 
 - 计数：可能对图像中的物体数量进行大致估计。
+
+**🚨笔者使用过程中的经验:**<br>
+
+利用gpt vision做OCR的效果不理想，推测训练方式为 "图A <--pair--> 图A的描述性文本"，所以用户询问类似 "图中有哪些内容？" 的问题时效果好，但询问 "请帮我将图片中的文本提取出来" 效果不理想。<br>
 
 
 ## 参数解释:
