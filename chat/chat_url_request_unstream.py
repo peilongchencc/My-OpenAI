@@ -1,19 +1,22 @@
+"""
+Description: 以request(同步)方式请求openai网址调用chat服务。
+Notes: 
+"""
 import requests
 import os
 from loguru import logger
 from dotenv import load_dotenv
 
 # 加载环境变量
-dotenv_path = '.env.local'
-load_dotenv(dotenv_path=dotenv_path)
+load_dotenv("env_config/.env.local")
 
 # 设置日志
 logger.remove()
 logger.add("openai_stream.log", rotation="1 GB", backtrace=True, diagnose=True, format="{time} {level} {message}")
 
 # 设置代理环境变量
-os.environ['http_proxy'] = 'http://127.0.0.1:7890'
-os.environ['https_proxy'] = 'http://127.0.0.1:7890'
+os.environ['http_proxy'] = os.getenv("HTTP_PROXY")
+os.environ['https_proxy'] = os.getenv("HTTPS_PROXY")
 
 # Your OpenAI API Key
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")

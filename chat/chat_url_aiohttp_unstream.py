@@ -1,5 +1,5 @@
 """
-Description: 测试aiohttp方式连接openai服务。
+Description: 以aiohttp(异步)方式请求openai网址调用chat服务。
 Requirements: 
 1. pip install aiohttp asyncio loguru python-dotenv
 2. 创建`.env.local`文件,并填入配置。
@@ -7,31 +7,27 @@ Notes:
 1. 笔者使用的是URL形式连接,如果想要采用openai sdk的方式,可以自行修改代码。
 2. 笔者使用的是异步,如果想要使用request(同步),请注意阻塞问题。
 """
+import os
 import aiohttp
 import asyncio
-import os
 from loguru import logger
 from dotenv import load_dotenv
 
 # 加载环境变量
-dotenv_path = '.env.local'
-load_dotenv(dotenv_path=dotenv_path)
+load_dotenv("env_config/.env.local")
 
 # 设置日志
 logger.remove()
 logger.add("openai_stream.log", rotation="1 GB", backtrace=True, diagnose=True, format="{time} {level} {message}")
 
-# OpenAI API Key
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
 async def fetch_openai_completion():
     url = "https://api.openai.com/v1/chat/completions"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {OPENAI_API_KEY}"
+        "Authorization": f"Bearer {os.getenv("OPENAI_API_KEY")}"
     }
     data = {
-        "model": "gpt-3.5-turbo",
+        "model": "gpt-4o",
         "messages": [
             {
                 "role": "system",
@@ -39,7 +35,7 @@ async def fetch_openai_completion():
             },
             {
                 "role": "user",
-                "content": "在光路中，AMP是什么器件？"
+                "content": "什么是纳米尺度效应？"
             }
         ]
     }
@@ -56,5 +52,6 @@ async def fetch_openai_completion():
     except Exception as e:
         logger.error(f"An error occurred: {e}")
 
-# 使用 asyncio.run() 直接运行异步函数
-asyncio.run(fetch_openai_completion())
+if __name__ == '__main__':
+    # 使用 asyncio.run() 直接运行异步函数
+    asyncio.run(fetch_openai_completion())

@@ -1,12 +1,24 @@
+"""
+Description: openai词向量获取、降维示例，验证 "手动降低维度" 和 "通过传参降低维度" 的区别:。
+Notes: 
+"""
+import sys
 import os
+
+# 获取当前脚本的绝对路径
+current_script_path = os.path.abspath(__file__)
+# 获取当前脚本的父目录的父目录
+parent_directory_of_the_parent_directory = os.path.dirname(os.path.dirname(current_script_path))
+# 将这个目录添加到 sys.path
+sys.path.append(parent_directory_of_the_parent_directory)
+
 import numpy as np
 from loguru import logger
 from dotenv import load_dotenv
 from openai import OpenAI
 
 # 加载环境变量
-dotenv_path = '.env.local'
-load_dotenv(dotenv_path=dotenv_path)
+load_dotenv('env_config/.env.local')
 
 # 设置日志
 logger.remove()

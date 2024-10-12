@@ -1,1 +1,0 @@
-本章介绍openai使用embedding模型的技巧。<br>
