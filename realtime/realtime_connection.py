@@ -5,7 +5,16 @@ Notes:
 注意: 由于网络限制，笔者必须开启 SOCKET5 代理才能访问，故没有使用python原生的websockets库。
 python原生的websockets库本身并不直接支持 SOCKS5 代理。
 """
+import sys
 import os
+
+# 获取当前脚本的绝对路径
+current_script_path = os.path.abspath(__file__)
+# 获取当前脚本的父目录的父目录
+parent_directory_of_the_parent_directory = os.path.dirname(os.path.dirname(current_script_path))
+# 将这个目录添加到 sys.path
+sys.path.append(parent_directory_of_the_parent_directory)
+
 import json
 import asyncio
 import aiohttp
